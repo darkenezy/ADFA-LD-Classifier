@@ -8,7 +8,6 @@ from tkinter import messagebox
 
 from ml import MyClassifier, PREDICTIONS
 
-
 CONFIG = {
     "clf": MyClassifier(logging=True),
     "input_data": "",
