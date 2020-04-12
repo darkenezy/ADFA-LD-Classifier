@@ -69,7 +69,7 @@ def predict():
     X = CONFIG.get("input_data", "").strip()
     if not X:
         messagebox.showerror("Error", "No input data provided")
-    res = CONFIG["clf"].predict([X], predict_one=True)
+    res = CONFIG["clf"].predict(X, predict_one=True)
 
     color = "red" if res else "green"
     prediction.config(text=PREDICTIONS[res], bg=color)
@@ -78,7 +78,7 @@ def predict():
 # Open TSPLIB file
 def open_file():
     filename = filedialog.askopenfilename(
-        initialdir="..\\tests", title="Select file", filetypes=(("ADFA-LD files", "*.txt"), ("all files", "*.*"))
+        initialdir="tests", title="Select file", filetypes=(("ADFA-LD files", "*.txt"), ("all files", "*.*"))
     )
     if not filename:
         return
@@ -141,7 +141,7 @@ def settings():
     
     random_state_label = Label(new, text="Random state:")
     random_state = Entry(new, textvariable=rs)
-    btn = Button(new, text = "Apply", command=click)
+    btn = Button(new, text="Apply", command=click)
     
     random_state_label.pack()
     random_state.pack()
@@ -153,7 +153,7 @@ def metrics():
     tp, fp, fn, tn = CONFIG["clf"].metrics["confusion_matrix"]
 
     new = Toplevel()
-    new.geometry("185x200")
+    new.geometry("215x230")
     new.title("Metrics")
     new.focus_force()
     new.resizable(width=False, height=False)
@@ -169,9 +169,10 @@ def metrics():
     Label(conf_matrix, text=f"FN: {fn}", fg=get_color(fn/(tp+fn+1), negative=True)).grid(row=3, column=0)
     Label(conf_matrix, text=f"TN: {tn}", fg=get_color(tn/(fp+tn+1))).grid(row=3, column=1)
 
-    Label(new, text="Multilabel classifier: ", font='Helvetica 12 bold').grid(row=4, column=0, sticky="W")
+    Label(new, text="Multilabel attack classifier: ", font='Helvetica 12 bold').grid(row=4, column=0, sticky="W")
     Label(new, text=f"Accuracy: {multilabel_accuracy:.3f}", fg=get_color(multilabel_accuracy)).grid(row=5, column=0, sticky="W")
     Button(new, text="ROC-CURVES", command=CONFIG["clf"].draw_roc_curves, width=25).grid(row=6, column=0, pady=10)
+    Button(new, text="CONF. MATR", command=CONFIG["clf"].draw_map, width=25).grid(row=7, column=0, pady=10)
     
 # Main frame
 root = Tk()

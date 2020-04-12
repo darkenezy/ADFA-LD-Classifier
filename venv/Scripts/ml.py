@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_curve
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_curve, plot_confusion_matrix
 from sklearn.linear_model import *
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -51,8 +51,6 @@ class MyClassifier():
     def transform_X(self, traces):
         X = []
         for arr in traces:
-            if isinstance(arr, str):
-                arr = list(map(int, arr.split()))
             temp = [0] * 340
             for i in arr:
                 if i > 340:
@@ -104,24 +102,45 @@ class MyClassifier():
             print("\nAttack training in progress")
         traces = self.attack_data["trace"].apply(lambda x: x.split())
         self.attack_vector = self.prepare_vector(traces)
-        
-        X, y = self.get_attack_X_y(self.attack_data)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.5, random_state=self.rs)
 
+        X, y = self.get_attack_X_y(self.attack_data)
+        X_train, X_test, y_train, y_test = [], [], [], []
+        for i in range(6):
+            ind = (y.argmax(axis=1) == i)
+            arr_x = X[ind]
+            arr_y = y[ind]
+            np.random.shuffle(arr_x)
+            X_train += list(arr_x[::2])
+            y_train += list(arr_y[::2])
+            X_test += list(arr_x[1::2])
+            y_test += list(arr_y[1::2])
+
+        X_train = np.array(X_train)
+        X_test = np.array(X_test)
+        y_train = np.array(y_train)
+        y_test = np.array(y_test)
+        
         self.metrics["y_test"] = y_test.T
         y_train = y_train.argmax(axis=1)
         y_test = y_test.argmax(axis=1)
         
         self.attack_classifier.fit(X_train, y_train)
-        
+
         self.metrics["probas"] = self.attack_classifier.predict_proba(X_test).T
-        y_pred = self.attack_classifier.predict(X_test)
+        self.metrics["map_x"] = X_test
+        self.metrics["map_y"] = y_test
         
+        y_pred = self.attack_classifier.predict(X_test)
         if self.logging:
             print("\nAttack_classifier accuracy:", accuracy_score(y_test, y_pred))
 
         self.metrics["multilabel_accuracy"] = accuracy_score(y_test, y_pred)
 
+    def draw_map(self):
+        disp = plot_confusion_matrix(self.attack_classifier, self.metrics["map_x"],
+                                     self.metrics["map_y"], cmap=plt.cm.Blues, normalize=None)
+        plt.show()
+        
     def draw_roc_curves(self):
         for i in range(6):
             lr_fpr, lr_tpr, _ = roc_curve(self.metrics["y_test"][i], self.metrics["probas"][i])
@@ -161,6 +180,9 @@ class MyClassifier():
 
 
     def predict(self, X, predict_one=False):
+        if isinstance(X, str):
+            X = np.array([list(map(int, X.split()))])
+            
         X_bin = self.transform_X(X)
         bp = self.binary_predict(X_bin)
         
@@ -170,7 +192,7 @@ class MyClassifier():
             return 0
 
         X_atk = self.transform_attack(X)
-        attack_predict = self.attack_predict(X_atk)
+        attack_predict = self.attack_predict(X_atk) + 1
 
         if predict_one:
             return attack_predict[0]
