@@ -22,7 +22,6 @@ class MyClassifier():
         self.binary_classifier = LogisticRegression(penalty="l2", random_state=rs, max_iter=3000)
         self.attack_classifier = LogisticRegression(penalty="l2", random_state=rs, max_iter=2000)
         self.attack_vector = None
-        self.scaler = None
         self.rs = rs
         
         self.metrics = {}
